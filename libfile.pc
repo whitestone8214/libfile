@@ -1,0 +1,5 @@
+Name: LibFile
+Description: A library which handles file.
+Version: 1
+Requires: libtext
+Libs: -lfile
