@@ -142,14 +142,12 @@ char *libfile_status (const char *address, char category) {
 char libfile_create (const char *address, char type, char with_parents) {
 	if ((address == NULL) || ((type != 'f') && (type != 'd'))) return 'f';
 	char *address1 = libfile_refine_address (address); if (address1 == NULL) return 'f';
-	//int gate; if (type == 'd') gate = mkdir (address1, 0700); else gate = open (address1, O_RDWR | O_CREAT, 0600);
-	int gate = open (address1, type == 'd' ? (O_RDWR | O_CREAT | O_DIRECTORY) : (O_RDWR | O_CREAT), type == 'd' ? 0700 : 0600);
+	int gate; if (type == 'd') gate = mkdir (address1, 0700); else gate = open (address1, O_RDWR | O_CREAT, 0600);
 	if (gate != -1) {if (type == 'f') close (gate); free (address1); return 's';}
 	else if (errno == EEXIST) {
 		char result1 = 'f';
-		/*if (type == 'f') {gate = open (address1, O_RDONLY); if (gate != -1) {result1 = 's'; close (gate);}}
-		else if (type == 'd') {DIR *gate1 = opendir (address1); if (gate1 != NULL) {result1 = 's'; closedir (gate1);}}*/
-		gate = open (address1, type == 'd' ? (O_RDONLY | O_DIRECTORY) : O_RDONLY); if (gate != -1) {result1 = 's'; close (gate);}
+		if (type == 'f') {gate = open (address1, O_RDONLY); if (gate != -1) {result1 = 's'; close (gate);}}
+		else if (type == 'd') {DIR *gate1 = opendir (address1); if (gate1 != NULL) {result1 = 's'; closedir (gate1);}}
 		free (address1); return result1;
 	}
 	else if (errno == ENOENT) {
