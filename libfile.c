@@ -45,9 +45,16 @@ char *libfile_refine_address (const char *address) {
 	// Phase 2: First character is not slash(/), Last character is slash(/)
 	char *result = strdup (address); if (result == NULL) return NULL;
 	if (result[0] != '/') {
-		char *address1 = libfile_here (); if (address1 == NULL) {free (result); return NULL;}
-		char *address2 = libtext_connect (3, address1, "/", result); free (address1); if (address2 == NULL) {free (result); return NULL;}
-		free (result); result = strdup (address2); free (address2); if (result == NULL) return NULL;
+		if ((result[0] == '~') && (result[1] == '/')) {
+			char *address1 = libfile_home (); if (address1 == NULL) {free (result); return NULL;}
+			char *address2 = libtext_cut (result, 0, 0, 'd'); free (result); if (address2 == NULL) {free (address1); return NULL;}
+			result = libtext_connect (2, address1, address2); free (address2); free (address1); if (result == NULL) return NULL;
+		}
+		else {
+			char *address1 = libfile_here (); if (address1 == NULL) {free (result); return NULL;}
+			char *address2 = libtext_connect (3, address1, "/", result); free (address1); if (address2 == NULL) {free (result); return NULL;}
+			free (result); result = strdup (address2); free (address2); if (result == NULL) return NULL;
+		}
 	}
 	if (result[strlen (result) - 1] == '/') {
 		char *address1 = libtext_cut (result, strlen (result) - 1, strlen (result) - 1, 'd'); if (address1 == NULL) {free (result); return NULL;}
