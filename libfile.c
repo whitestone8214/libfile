@@ -64,8 +64,10 @@ char *libfile_refine_address (const char *address) {
 	int nth = 0; while (nth >= 0) {
 		if (nth >= strlen (result)) break;
 		if ((result[nth] == '/') && (libtext_escaped (result, nth) == 'n')) {
+			int nth1; for (nth1 = nth; nth1 < strlen (result); nth1++) if (result[nth1] != '/') break;
+			
 			// Phase 3: Two or more slashes
-			int nth1; for (nth1 = nth; nth1 < strlen (result); nth1++) if (result[nth1] != '/') break; if (nth1 - nth >= 2) {
+			if (nth1 - nth >= 2) {
 				char *address1 = libtext_cut (result, nth + 1, nth1 - 1, 'd'); if (address1 == NULL) {free (result); return NULL;}
 				free (result); result = strdup (address1); free (address1); if (result == NULL) return NULL; nth = -1;
 			}
@@ -88,7 +90,7 @@ char *libfile_refine_address (const char *address) {
 					}
 					else {
 						for (nth1 = nth - 1; nth1 >= 0; nth1--) if ((result[nth1] == '/') && (libtext_escaped (result, nth1) == 'n')) break; if (nth1 >= 0) {
-							char *address1 = libtext_cut (result, nth1, nth + 2, 'd'); if (address1 == NULL) {free (result); return NULL;}
+							char *address1 = nth1 <= 0 ? strdup ("/") : libtext_cut (result, nth1, nth + 2, 'd'); if (address1 == NULL) {free (result); return NULL;}
 							free (result); result = strdup (address1); free (address1); if (result == NULL) return NULL; nth = -1;
 						}
 					}
