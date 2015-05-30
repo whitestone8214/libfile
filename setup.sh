@@ -2,7 +2,7 @@
 
 if (test "$1" = "build"); then
 	rm -rf libfile.so || exit 1
-	gcc libfile.c $(pkg-config --cflags --libs libtext) -lm -shared -o libfile.so || exit 1
+	gcc libfile.c $(pkg-config --cflags --libs libtext) -fPIC -lm -shared -o libfile.so || exit 1
 	
 elif (test "$1" = "install"); then
 	cp -f libfile.so /usr/lib || exit 1
