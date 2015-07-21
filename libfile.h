@@ -1,7 +1,7 @@
 /*
 	LibFile - 파일 관련 함수 모음
 
-	Copyright (C) 2014 Minho Jo <whitestone8214@openmailbox.org>
+	Copyright (C) 2014-2015 Minho Jo <whitestone8214@openmailbox.org>
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU Lesser General Public License as published by
