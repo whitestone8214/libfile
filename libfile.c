@@ -180,13 +180,25 @@ char *libfile_read (const char *address, int from, int to) {
 	return content;
 }
 
-char libfile_write (const char *address, const char *content, int where, char create) {
+char libfile_write (const char *address, const char *content, char type, int where, char create, char *brake) {
 	if ((address == NULL) || (content == NULL)) return 'f';
-	struct stat status; lstat (address, &status); //if (status == NULL) return NULL;
-	int file = open (address, O_RDONLY); if (file == -1) {if (create == 'y') {file = open (address, O_RDWR | O_CREAT, 0600); if (file == -1) return 'f';} else return 'f';}
+	int file; if (create == 'n') file = open (address, O_RDONLY); else file = open (address, O_RDWR | O_CREAT, 0600); if (file == -1) return 'f';
 	int end = lseek (file, 0, SEEK_END); if (where > end) where = end; else if (where < 0) where = 0;
-	lseek (file, where, SEEK_SET); int result = write (file, (void *) content, strlen (content));
-	close (file); return result == strlen (content) ? 's' : 'f';
+	lseek (file, where, SEEK_SET);
+	
+	if (type == 'f') {
+		int file1 = open (content, O_RDONLY); if (file1 == -1) {close (file); return 'f';}
+		char data; ssize_t result = sizeof (char); while (result >= sizeof (char)) {
+			if ((brake != NULL) && (*brake != 0)) {close (file1); close (file); return 'f';}
+			result = read (file1, &data, sizeof (char)); if (result == -1) {close (file1); close (file); return 'f';}
+			write (file, &data, result);
+		}
+		close (file1); close (file); return (result != -1) ? 's' : 'f';
+	}
+	else {
+		int result = write (file, (void *) content, strlen (content));
+		close (file); return result == strlen (content) ? 's' : 'f';
+	}
 }
 
 char libfile_copy (const char *from, const char *to, char *brake) {
@@ -194,26 +206,24 @@ char libfile_copy (const char *from, const char *to, char *brake) {
 	if (access (from, F_OK | R_OK) != 0) return 'f';
 	char *type = libfile_status (from, 't'); if (type == NULL) return 'f'; int result = strcmp (type, "Directory"); free (type);
 	if (result == 0) {
-		if (*brake != 0) return 'f';
+		if ((brake != NULL) && (*brake != 0)) return 'f';
 		if (libfile_create (to, 'd', 'y') != 's') return 'f';
 		DIR *from2 = opendir (from); if (from2 == NULL) return 'f';
 		struct dirent *from3; while ((from3 = readdir (from2)) != NULL) {
-			if (*brake != 0) {closedir (from2); return 'f';}
-			if ((strcmp (from3->d_name, ".") == 0) || (strcmp (from3->d_name, "..") == 0)) {closedir (from2); continue;}
+			if ((brake != NULL) && (*brake != 0)) {closedir (from2); return 'f';}
+			if ((strcmp (from3->d_name, ".") == 0) || (strcmp (from3->d_name, "..") == 0)) continue;
 			if (access (from, F_OK | R_OK) != 0) {closedir (from2); return 'f';}
 			char *name = strdup (from3->d_name); if (name == NULL) {closedir (from2); return 'f';}
 			char *from4 = libtext_connect (3, from, "/", name); if (from4 == NULL) {free (name); closedir (from2); return 'f';}
 			char *to2 = libtext_connect (3, to, "/", name); if (to2 == NULL) {free (from4); free (name); closedir (from2); return 'f';}
-			if (*brake != 0) {free (to2); free (from4); free (name); closedir (from2); return 'f';}
+			if ((brake != NULL) && (*brake != 0)) {free (to2); free (from4); free (name); closedir (from2); return 'f';}
 			char result1 = libfile_copy (from4, to2, brake); free (to2); free (from4); free (name); if (result1 != 's') {closedir (from2); return 'f';} 
 		}
 		closedir (from2); return 's';
 	}
 	else {
-		if (*brake != 0) return 'f';
-		char *content = libfile_read (from, 0, -1); if (content == NULL) return 'f';
-		if (*brake != 0) return 'f';
-		char result = libfile_write (to, content, 0, 'y'); free (content); return result;
+		if ((brake != NULL) && (*brake != 0)) return 'f';
+		char result = libfile_write (to, from, 'f', 0, 'y', brake); return result;
 	}
 }
 
@@ -222,29 +232,30 @@ char libfile_erase (const char *address, char *brake) {
 	if (access (address, F_OK | R_OK | W_OK) != 0) return 'f';
 	char *type = libfile_status (address, 't'); if (type == NULL) return 'f'; int result = strcmp (type, "Directory"); free (type);
 	if (result == 0) {
-		if (*brake != 0) return 'f';
+		if ((brake != NULL) && (*brake != 0)) return 'f';
 		
 		DIR *directory = opendir (address); if (address == NULL) return 'f';
 		struct dirent *directory1; while ((directory1 = readdir (directory)) != NULL) {
-			if (*brake != 0) {closedir (directory); return 'f';}
+			if ((brake != NULL) && (*brake != 0)) {closedir (directory); return 'f';}
 			if ((strcmp (directory1->d_name, ".") == 0) || (strcmp (directory1->d_name, "..") == 0)) continue;
 			if (access (address, F_OK | R_OK | W_OK) != 0) {closedir (directory); return 'f';}
 			char *name = strdup (directory1->d_name); if (name == NULL) {closedir (directory); return 'f';}
 			char *address1 = libtext_connect (3, address, "/", name); if (address1 == NULL) {free (name); closedir (directory); return 'f';}
-			if (*brake != 0) {free (address1); free (name); closedir (directory); return 'f';}
-			char result1 = libfile_erase (address1, brake); free (address1); free (name); if (result1 != 's') {closedir (directory); return 'f';}
+			if ((brake != NULL) && (*brake != 0)) {free (address1); free (name); closedir (directory); return 'f';}
+			char result1 = libfile_erase (address1, brake);
+			free (address1); free (name); if (result1 != 's') {closedir (directory); return 'f';}
 		}
-		closedir (directory); result = unlink (address); return result == 0 ? 's' : 'f';
+		closedir (directory); result = rmdir (address); return result == 0 ? 's' : 'f';
 	}
 	else {result = unlink (address); return result == 0 ? 's' : 'f';}
 }
 
 char libfile_move (const char *from, const char *to, char *brake) {
 	if ((from == NULL) || (to == NULL)) return 'f';
-	if (*brake != 0) return 'f';
+	if ((brake != NULL) && (*brake != 0)) return 'f';
 	if (rename (from, to) == 0) return 's';
 	if (errno != EXDEV) return 'f';
 	char result = libfile_copy (from, to, brake); if (result != 's') return 'f';
-	if (*brake != 0) return 'f';
+	if ((brake != NULL) && (*brake != 0)) return 'f';
 	return libfile_erase (from, brake);
 }

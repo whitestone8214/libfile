@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
+#include <unistd.h>
 
 /* (malloc() 사용)
 현재 위치를 반환합니다. */
@@ -64,10 +65,12 @@ char libfile_create (const char *address, char type, char with_parents);
 'from'이 'to'보다 거나 파일 내용을 읽을 수 없으면 NULL을 반환합니다. */
 char *libfile_read (const char *address, int from, int to);
 
-/* 파일 'address'의 'where'번째 칸에 'content'를 넣으며, 성공했을 경우 's'를, 실패했을 경우 'f'를 반환합니다.
+/* 파일 'address'의 'where'번째 칸에 'content'를 삽입하며, 성공했을 경우 's'를, 실패했을 경우 'f'를 반환합니다.
+'type'이 'f'인 경우 'content'는 파일 경로로 해석되어 해당 파일의 내용을 삽입하게 되며, 그 외의 값인 경우 'content'는 단순히 삽입할 문자열로 해석됩니다.
 'where'은 0보다 작으면 0으로, 파일 내용의 마지막 글자 바로 다음의 위치 값보다 크면 마지막 글자 바로 다음의 위치 값으로 맞춰집니다.
-'create'가 'y'인 경우는 파일 'address'가 없으면 새로 만듭니다. */
-char libfile_write (const char *address, const char *content, int where, char create);
+'create'가 'y'인 경우는 파일 'address'가 없으면 새로 만듭니다.
+'brake'는 char형 변수의 포인터이며, 가리키는 변수의 값이 0이 아닌 경우 작업이 중단됩니다. */
+char libfile_write (const char *address, const char *content, char type, int where, char create, char *brake);
 
 /* 파일 'from'을 'to'로 복사하며, 성공했을 경우 's'를, 실패했을 경우 'f'를 반환합니다.
 'brake'는 char형 변수의 포인터이며, 가리키는 변수의 값이 0이 아닌 경우 작업이 중단됩니다.
