@@ -182,22 +182,23 @@ char *libfile_read (const char *address, int from, int to) {
 
 char libfile_write (const char *address, const char *content, char type, int where, char create, char *brake) {
 	if ((address == NULL) || (content == NULL)) return 'f';
-	int file; if (create == 'n') file = open (address, O_RDONLY); else file = open (address, O_RDWR | O_CREAT, 0600); if (file == -1) return 'f';
+	char *address1 = libfile_refine_address (address); if (address1 == NULL) return 'f';
+	int file; if (create == 'n') file = open (address1, O_RDONLY); else file = open (address1, O_RDWR | O_CREAT, 0600); if (file == -1) {free (address1); return 'f';}
 	int end = lseek (file, 0, SEEK_END); if (where > end) where = end; else if (where < 0) where = 0;
 	lseek (file, where, SEEK_SET);
 	
 	if (type == 'f') {
-		int file1 = open (content, O_RDONLY); if (file1 == -1) {close (file); return 'f';}
+		int file1 = open (content, O_RDONLY); if (file1 == -1) {close (file); free (address1); return 'f';}
 		char data; ssize_t result = sizeof (char); while (result >= sizeof (char)) {
-			if ((brake != NULL) && (*brake != 0)) {close (file1); close (file); return 'f';}
-			result = read (file1, &data, sizeof (char)); if (result == -1) {close (file1); close (file); return 'f';}
+			if ((brake != NULL) && (*brake != 0)) {close (file1); close (file); free (address1); return 'f';}
+			result = read (file1, &data, sizeof (char)); if (result == -1) {close (file1); close (file); free (address1); return 'f';}
 			write (file, &data, result);
 		}
-		close (file1); close (file); return (result != -1) ? 's' : 'f';
+		close (file1); close (file); free (address1); return (result != -1) ? 's' : 'f';
 	}
 	else {
 		int result = write (file, (void *) content, strlen (content));
-		close (file); return result == strlen (content) ? 's' : 'f';
+		close (file); free (address1); return result == strlen (content) ? 's' : 'f';
 	}
 }
 
