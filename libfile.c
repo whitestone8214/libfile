@@ -229,25 +229,26 @@ char libfile_copy (const char *from, const char *to, char *brake) {
 
 char libfile_erase (const char *address, char *brake) {
 	if (address == NULL) return 'f';
-	if (access (address, F_OK | R_OK | W_OK) != 0) return 'f';
-	char *type = libfile_status (address, 't'); if (type == NULL) return 'f'; int result = strcmp (type, "Directory"); free (type);
+	char *address0 = libfile_refine_address (address); if (address0 == NULL) return 'f';
+	if (access (address0, F_OK | R_OK | W_OK) != 0) {free (address0); return 'f';}
+	char *type = libfile_status (address0, 't'); if (type == NULL) {free (address0); return 'f';} int result = strcmp (type, "Directory"); free (type);
 	if (result == 0) {
-		if ((brake != NULL) && (*brake != 0)) return 'f';
+		if ((brake != NULL) && (*brake != 0)) {free (address0); return 'f';}
 		
-		DIR *directory = opendir (address); if (address == NULL) return 'f';
+		DIR *directory = opendir (address0); if (directory == NULL) {free (address0); return 'f';}
 		struct dirent *directory1; while ((directory1 = readdir (directory)) != NULL) {
-			if ((brake != NULL) && (*brake != 0)) {closedir (directory); return 'f';}
+			if ((brake != NULL) && (*brake != 0)) {closedir (directory); free (address0); return 'f';}
 			if ((strcmp (directory1->d_name, ".") == 0) || (strcmp (directory1->d_name, "..") == 0)) continue;
-			if (access (address, F_OK | R_OK | W_OK) != 0) {closedir (directory); return 'f';}
-			char *name = strdup (directory1->d_name); if (name == NULL) {closedir (directory); return 'f';}
-			char *address1 = libtext_connect (3, address, "/", name); if (address1 == NULL) {free (name); closedir (directory); return 'f';}
-			if ((brake != NULL) && (*brake != 0)) {free (address1); free (name); closedir (directory); return 'f';}
+			if (access (address0, F_OK | R_OK | W_OK) != 0) {closedir (directory); free (address0); return 'f';}
+			char *name = strdup (directory1->d_name); if (name == NULL) {closedir (directory); free (address0); return 'f';}
+			char *address1 = libtext_connect (3, address0, "/", name); if (address1 == NULL) {free (name); closedir (directory); free (address0); return 'f';}
+			if ((brake != NULL) && (*brake != 0)) {free (address1); free (name); closedir (directory); free (address0); return 'f';}
 			char result1 = libfile_erase (address1, brake);
-			free (address1); free (name); if (result1 != 's') {closedir (directory); return 'f';}
+			free (address1); free (name); if (result1 != 's') {closedir (directory); free (address0); return 'f';}
 		}
-		closedir (directory); result = rmdir (address); return result == 0 ? 's' : 'f';
+		closedir (directory); result = rmdir (address0); free (address0); return result == 0 ? 's' : 'f';
 	}
-	else {result = unlink (address); return result == 0 ? 's' : 'f';}
+	else {result = unlink (address0); free (address0); return result == 0 ? 's' : 'f';}
 }
 
 char libfile_move (const char *from, const char *to, char *brake) {
